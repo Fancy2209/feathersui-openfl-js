@@ -188,13 +188,13 @@ class TSExternsGenerator {
 		if (asReference && baseType.pack.length == 0 && ALWAYS_ALLOWED_REFERENCE_TYPES.indexOf(baseType.name) != -1) {
 			return false;
 		}
-		
+
 		if (baseType.isPrivate || (baseType.isExtern && !asReference) || isInHiddenPackage(baseType.pack)) {
 			return true;
 		}
 		final qname = baseTypeToQname(baseType, [], false);
 		if ((options == null || options.renameSymbols == null || options.renameSymbols.indexOf(qname) == -1)
-				&& baseType.meta.has(":noCompletion")) {
+			&& baseType.meta.has(":noCompletion")) {
 			return true;
 		}
 		if (options != null) {
@@ -298,20 +298,23 @@ class TSExternsGenerator {
 			}
 			var current = superClassType;
 			var isConflictingStatic = false;
-			while (current != null) {
-				if (Lambda.exists(current.statics.get(), superStaticField -> superStaticField.name == classField.name && !superStaticField.type.equals(classField.type))) {
-					// typescript is weirdly strict when subclass have static
-					// members with the same name, but different signatures.
-					// it seems to be because JS allows you to use the `this`
-					// keyword in a static method, which is usually not allowed
-					// in other languages.
-					isConflictingStatic = true;
-					break;
-				}
-				if (current.superClass != null) {
-					current = current.superClass.t.get();
-				} else {
-					current = null;
+			if (superClassType != null && !shouldSkipBaseType(superClassType, true)) {
+				while (current != null) {
+					if (Lambda.exists(current.statics.get(),
+						superStaticField -> superStaticField.name == classField.name && !superStaticField.type.equals(classField.type))) {
+						// typescript is weirdly strict when subclass have static
+						// members with the same name, but different signatures.
+						// it seems to be because JS allows you to use the `this`
+						// keyword in a static method, which is usually not allowed
+						// in other languages.
+						isConflictingStatic = true;
+						break;
+					}
+					if (current.superClass != null) {
+						current = current.superClass.t.get();
+					} else {
+						current = null;
+					}
 				}
 			}
 			// TODO: try to expose this another way
@@ -382,7 +385,7 @@ class TSExternsGenerator {
 		if (doc == null || StringTools.trim(doc).length == 0) {
 			return "";
 		}
-		
+
 		var result = new StringBuf();
 		result.add('$indent/**\n');
 		var lines = ~/\r?\n/g.split(doc);
@@ -996,9 +999,9 @@ class TSExternsGenerator {
 							result.add(generateInitExpression(classField));
 							result.add(',\n');
 						}
-						// TODO: if TypeScript will unify enums and interfaces,
-						// with the same name, we should be able to put other
-						// types of vars and methods into an interface.
+					// TODO: if TypeScript will unify enums and interfaces,
+					// with the same name, we should be able to put other
+					// types of vars and methods into an interface.
 					default:
 				}
 			}
@@ -1404,7 +1407,7 @@ class TSExternsGenerator {
 				}
 			default:
 		}
-		
+
 		if (includeParams) {
 			var abstractTypeQname = baseTypeToQname(abstractType, abstractTypeParams, false);
 			var paramsToInclude:Array<Type> = null;
@@ -1449,7 +1452,7 @@ class TSExternsGenerator {
 				}
 			default:
 		}
-		
+
 		if (includeParams) {
 			var abstractTypeQname = baseTypeToQname(abstractType, abstractTypeParams, false);
 			var paramsToInclude:Array<Type> = null;
@@ -1472,7 +1475,7 @@ class TSExternsGenerator {
 
 		return macroTypeToQname(underlyingType, includeParams);
 	}
-	
+
 	private function translateTypeParam(typeParam:Type, typeParametersQname:String, typeParameters:Array<TypeParameter>, params:Array<Type>):Type {
 		switch (typeParam) {
 			case TInst(t, _):
@@ -1511,31 +1514,31 @@ class TSExternsGenerator {
 
 	private function relativizePath(path:String, relativeToPath:String):String {
 		var currentPath = path;
-        var stack:Array<String> = [];
-        stack.push(Path.withoutDirectory(currentPath));
-        var currentPath = Path.directory(currentPath);
-        while (currentPath.length > 0) {
-            if (StringTools.startsWith(relativeToPath, currentPath + "/")) {
-                var relativeRelativeToFile = relativeToPath.substring(currentPath.length + 1);
-                var separatorCount = relativeRelativeToFile.length - ~/\//g.replace(relativeRelativeToFile, "").length;
-                var result = "";
-                while (separatorCount > 0) {
-                    result += "../";
-                    separatorCount--;
-                }
-                while (stack.length > 0) {
-                    result += stack.pop();
-                }
+		var stack:Array<String> = [];
+		stack.push(Path.withoutDirectory(currentPath));
+		var currentPath = Path.directory(currentPath);
+		while (currentPath.length > 0) {
+			if (StringTools.startsWith(relativeToPath, currentPath + "/")) {
+				var relativeRelativeToFile = relativeToPath.substring(currentPath.length + 1);
+				var separatorCount = relativeRelativeToFile.length - ~/\//g.replace(relativeRelativeToFile, "").length;
+				var result = "";
+				while (separatorCount > 0) {
+					result += "../";
+					separatorCount--;
+				}
+				while (stack.length > 0) {
+					result += stack.pop();
+				}
 				if (!StringTools.startsWith(result, ".")) {
 					result = "./" + result;
 				}
-                return result;
-            }
-            stack.push(Path.withoutDirectory(currentPath) + "/");
-            currentPath = Path.directory(currentPath);
-        }
-        return "";
-    }
+				return result;
+			}
+			stack.push(Path.withoutDirectory(currentPath) + "/");
+			currentPath = Path.directory(currentPath);
+		}
+		return "";
+	}
 }
 
 typedef TSGeneratorOptions = {
