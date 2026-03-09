@@ -47,7 +47,7 @@
     "gen-lib": "cd npm-scripts && node generate-modules gen-lib",
     "build-lib": "cd npm-scripts && haxe js-lib.hxml && node generate-modules fix-npm-libs && tsc",
     "build-lib-esm": "cd npm-scripts && node generate-modules gen-esm",
-    "build-swc": "compc -load-config=node_modules/@apache-royale/royale-js/royale-asjs/frameworks/js-config.xml -keep-as3-metadata=JSModule -include-sources=lib -compiler.targets=SWF,JS -warnings=false -external-library-path+=node_modules/openfl/dist/openfl.swc -allow-subclass-overrides=true -output=dist/feathersui-royale-typedefs.swc",
+    "build-swc": "compc -load-config=node_modules/@apache-royale/royale-js/royale-asjs/frameworks/js-config.xml -keep-as3-metadata=JSModule -include-sources=lib -compiler.targets=SWF,JS -warnings=false -external-library-path+=node_modules/openfl/dist/openfl.swc -allow-subclass-overrides=true --namespace+=https://ns.feathersui.com/mxml,npm-scripts/manifest.xml -output=dist/feathersui-royale-typedefs.swc",
     "build-dist": "npm run build-dist:dev && npm run build-dist:prod",
     "build-dist:dev": "webpack --config webpack.dev.js",
     "build-dist:prod": "webpack --config webpack.prod.js"
