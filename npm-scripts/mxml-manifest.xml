@@ -1,4 +1,10 @@
 <?xml version="1.0"?>
+
+<!--
+
+    Feathers UI Components
+
+-->
 <componentPackage>
   <component id="ActivityIndicator" class="feathers.controls.ActivityIndicator"/>
   <component id="Application" class="feathers.controls.Application"/>
