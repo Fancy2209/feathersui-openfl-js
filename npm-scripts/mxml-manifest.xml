@@ -75,7 +75,7 @@
 
   <component id="AnchorLayout" class="feathers.layout.AnchorLayout"/>
   <component id="AnchorLayoutData" class="feathers.layout.AnchorLayoutData"/>
-  <component id="Anchor" class="feathers.layout.AnchorLayout.Anchor"/>
+  <component id="Anchor" class="feathers.layout.Anchor"/>
   <component id="FlowRowsLayout" class="feathers.layout.FlowRowsLayout"/>
   <component id="HorizontalDistributedLayout" class="feathers.layout.HorizontalDistributedLayout"/>
   <component id="HorizontalLayout" class="feathers.layout.HorizontalLayout"/>
