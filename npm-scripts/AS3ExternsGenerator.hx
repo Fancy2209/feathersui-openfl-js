@@ -6,6 +6,7 @@ import haxe.macro.Type;
 import haxe.macro.Type.BaseType;
 import haxe.macro.Type.AbstractType;
 import haxe.macro.Context;
+import haxe.macro.Expr.Metadata;
 
 class AS3ExternsGenerator {
 	private static final ALWAYS_ALLOWED_REFERENCE_TYPES = [
@@ -34,6 +35,12 @@ class AS3ExternsGenerator {
 		"Int" => "int",
 		"UInt" => "uint",
 		"Void" => "void"
+	];
+	private static final METADATA_TO_REWRITE:Map<String, String> = [
+		":bindable" 		 => "Bindable",
+		":event" 			 => "Event",
+		":inspectable" 		 => "Inspectable",
+		"defaultXmlProperty" => "DefaultProperty"
 	];
 	private static final QNAME_VECTOR = "Vector";
 
@@ -263,6 +270,7 @@ class AS3ExternsGenerator {
 		result.add(' {\n');
 		result.add(generateClassTypeImports(classType));
 		result.add(generateDocs(classType.doc, true, ""));
+		result.add(generateMetadata(classType.meta.get(), ""));
 		var className = baseTypeToUnqualifiedName(classType, params, false);
 		result.add('public class $className');
 		var includeFieldsFrom:ClassType = null;
@@ -353,6 +361,7 @@ class AS3ExternsGenerator {
 			interfaces:Array<{t:Ref<ClassType>, params:Array<Type>}>):String {
 		var result = new StringBuf();
 		result.add(generateDocs(classField.doc, false, "\t"));
+		result.add(generateMetadata(classField.meta.get(), "\t"));
 		result.add("\t");
 		var superClassType:ClassType = null;
 		var skippedSuperClass = false;
@@ -681,6 +690,7 @@ class AS3ExternsGenerator {
 		result.add(' {\n');
 		result.add(generateClassTypeImports(interfaceType));
 		result.add(generateDocs(interfaceType.doc, true, ""));
+		result.add(generateMetadata(interfaceType.meta.get(), ""));
 		var interfaceName = baseTypeToUnqualifiedName(interfaceType, params, false);
 		result.add('public interface ${interfaceName}');
 		var interfaces = interfaceType.interfaces;
@@ -713,6 +723,7 @@ class AS3ExternsGenerator {
 	private function generateInterfaceField(interfaceField:ClassField):String {
 		var result = new StringBuf();
 		result.add(generateDocs(interfaceField.doc, false, "\t"));
+		result.add(generateMetadata(interfaceField.meta.get(), "\t"));
 		result.add("\t");
 		switch (interfaceField.kind) {
 			case FMethod(k):
@@ -791,6 +802,7 @@ class AS3ExternsGenerator {
 		}
 		result.add(' {\n');
 		result.add(generateDocs(enumType.doc, true, ""));
+		result.add(generateMetadata(enumType.meta.get(), ""));
 		var enumName = baseTypeToUnqualifiedName(enumType, params, false);
 		result.add('public class ${enumName}');
 		result.add(' {\n');
@@ -805,6 +817,7 @@ class AS3ExternsGenerator {
 	private function generateEnumField(enumField:EnumField, enumType:EnumType, enumTypeParams:Array<Type>):String {
 		var result = new StringBuf();
 		result.add(generateDocs(enumField.doc, false, "\t"));
+		result.add(generateMetadata(enumField.meta.get(), "\t"));
 		result.add("\t");
 		result.add('public static ');
 		result.add('const ');
@@ -827,6 +840,7 @@ class AS3ExternsGenerator {
 		}
 		result.add(' {\n');
 		result.add(generateDocs(abstractType.doc, true, ""));
+		result.add(generateMetadata(abstractType.meta.get(), ""));
 		var abstractName = baseTypeToUnqualifiedName(abstractType, params, false);
 		result.add('public class ${abstractName}');
 		result.add(' {\n');
@@ -878,6 +892,105 @@ class AS3ExternsGenerator {
 			result.add('$indent * @externs\n');
 		}
 		result.add('$indent */\n');
+		return result.toString();
+	}
+
+	private function generateMetadata(metadata:Metadata, indent:String):String {
+		var result = new StringBuf();
+		for (meta in metadata) {
+			if (METADATA_TO_REWRITE.exists(meta.name)) {
+				var metadataName = METADATA_TO_REWRITE.get(meta.name);
+				var hasParams:Bool = (meta.params != null && meta.params.length > 0);
+
+				result.add('$indent[$metadataName');
+
+				var addArgsAfter = false;
+				var args = new Array<String>();
+
+				if (hasParams) {
+					result.add('(');
+					for (param in meta.params) {
+						addArgsAfter = false;
+						// trace(param.expr);
+						switch (param.expr) {
+							// Bindable
+							case EConst(CString(s)):
+								result.add('"$s"');
+
+							// Event
+							case EField(e, field):
+								var field:String = field;
+								var qualifiedName:String = "";
+								switch (e.expr) {
+									case EField(e, field):
+										switch (e.expr) {
+											case EField(e, field):
+												switch (e.expr) {
+													case EConst(CIdent(s)):
+														qualifiedName = s + "." + field;
+													case _:
+												}
+											case _:
+										}
+										qualifiedName = qualifiedName + "." + field;
+									case _:
+								}
+								var type:Type = Context.getType(qualifiedName);
+								var propValue:String = "";
+								switch (type) {
+									case TInst(t, _):
+										var cls:ClassType = t.get();
+										for (f in cls.statics.get()) {
+											if (f.name == field) {
+												if (f.expr() != null) {
+													var e:TypedExpr = f.expr();
+													switch (e.expr) {
+														case TCast(t, _):
+															switch (t.expr) {
+																case TConst(TString(s)):
+																	propValue = s;
+																case _:
+															}
+														case _:
+													}
+												}
+											}
+										}
+									case _:
+								}
+								result.add('name="$propValue", type="$qualifiedName"');
+
+							// Inspectable
+							case EBinop(_, e1, e2):
+								addArgsAfter = true;
+								var prop = "";
+								var value = "";
+								switch (e1.expr) {
+									case EConst(CIdent(s)):
+										prop = s;
+									case _:
+								}
+
+								switch (e2.expr) {
+									case EConst(CString(s)):
+										value = s;
+									case _:
+								}
+								args.push('$prop = "$value"');
+
+							case _:
+						}
+					}
+
+					if (addArgsAfter) 
+						result.add(args.join(", "));
+					result.add(')');
+				}
+
+				result.add(']\n');
+			}
+		}
+
 		return result.toString();
 	}
 
