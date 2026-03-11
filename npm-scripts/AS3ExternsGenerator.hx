@@ -216,10 +216,6 @@ class AS3ExternsGenerator {
 		if (options != null && options.vectorEmulationClass != null && qname == QNAME_VECTOR) {
 			return false;
 		}
-		if ((options == null || options.renameSymbols == null || options.renameSymbols.indexOf(qname) == -1)
-				&& baseType.meta.has(":noCompletion")) {
-			return true;
-		}
 		if (options != null) {
 			if (options.includedPackages != null) {
 				final qnameLastDotIndex = qname.lastIndexOf(".");
@@ -270,7 +266,7 @@ class AS3ExternsGenerator {
 		result.add(' {\n');
 		result.add(generateClassTypeImports(classType));
 		result.add(generateDocs(classType.doc, true, ""));
-		result.add(generateMetadata(classType.meta.get(), ""));
+		result.add(generateMetadata(classType.meta.get(), "", classType));
 		var className = baseTypeToUnqualifiedName(classType, params, false);
 		result.add('public class $className');
 		var includeFieldsFrom:ClassType = null;
@@ -690,7 +686,7 @@ class AS3ExternsGenerator {
 		result.add(' {\n');
 		result.add(generateClassTypeImports(interfaceType));
 		result.add(generateDocs(interfaceType.doc, true, ""));
-		result.add(generateMetadata(interfaceType.meta.get(), ""));
+		result.add(generateMetadata(interfaceType.meta.get(), "", interfaceType));
 		var interfaceName = baseTypeToUnqualifiedName(interfaceType, params, false);
 		result.add('public interface ${interfaceName}');
 		var interfaces = interfaceType.interfaces;
@@ -895,7 +891,7 @@ class AS3ExternsGenerator {
 		return result.toString();
 	}
 
-	private function generateMetadata(metadata:Metadata, indent:String):String {
+	private function generateMetadata(metadata:Metadata, indent:String, classType:Null<ClassType> = null):String {
 		var result = new StringBuf();
 		for (meta in metadata) {
 			if (METADATA_TO_REWRITE.exists(meta.name)) {
@@ -991,6 +987,43 @@ class AS3ExternsGenerator {
 			}
 		}
 
+		// Add [ExcludeClass] and [Exclude] metadata tags
+		if(classType != null)
+		{
+			if(classType.meta.has(":noCompletion")) result.add('$indent[ExcludeClass]');
+			var includeFieldsFrom:ClassType = null;
+			while (includeFieldsFrom != null) {
+				for (classField in includeFieldsFrom.fields.get()) {
+					if(classField.meta.has(":noCompletion") && classField.isPublic)
+					{
+						var fieldName = classField.name;
+						var kind = macroTypeToExcludeKind(classField.type);
+						result.add('$indent[Exclude(name = "$fieldName", kind="$kind")]\n');
+					}
+				}
+				if (includeFieldsFrom.superClass == null) {
+					break;
+				}
+				includeFieldsFrom = includeFieldsFrom.superClass.t.get();
+			}
+			for (classField in classType.statics.get()) {
+				if(classField.meta.has(":noCompletion") && classField.isPublic)
+					{
+						var fieldName = classField.name;
+						var kind = macroTypeToExcludeKind(classField.type);
+						result.add('$indent[Exclude(name = "$fieldName", kind="$kind")]\n');
+					}
+			}
+			for (classField in classType.fields.get()) {
+				if(classField.meta.has(":noCompletion") && classField.isPublic)
+					{
+						var fieldName = classField.name;
+						var kind = macroTypeToExcludeKind(classField.type);
+						result.add('$indent[Exclude(name = "$fieldName", kind="$kind")]\n');
+					}
+			}
+		}
+
 		return result.toString();
 	}
 
@@ -998,7 +1031,6 @@ class AS3ExternsGenerator {
 		if (classField.name != "new") {
 			if (!classField.isPublic
 				|| classField.isExtern
-				|| classField.meta.has(":noCompletion")
 				|| DISALLOWED_AS3_NAMES.indexOf(classField.name) != -1) {
 				return true;
 			}
@@ -1151,6 +1183,14 @@ class AS3ExternsGenerator {
 			}
 		}
 		return "*";
+	}
+
+	private function macroTypeToExcludeKind(type:Type, includeParams:Bool = true):String {
+		var qname = macroTypeToQname(type, includeParams);
+		if(qname == "Function")
+			return "method";
+		else
+			return "property";
 	}
 
 	private function rewriteQname(qname:String):String {
