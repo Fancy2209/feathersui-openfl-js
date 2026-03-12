@@ -40,7 +40,7 @@ class AS3ExternsGenerator {
 		"bindable" 		      => "Bindable",
 		"event" 			  => "Event",
 		"inspectable" 		  => "Inspectable",
-		"defaultXmlProperty"  => "DefaultProperty"
+		"defaultXmlProperty"  => "DefaultProperty",
 		":bindable" 		  => "Bindable",
 		":event" 			  => "Event",
 		":inspectable" 		  => "Inspectable",
