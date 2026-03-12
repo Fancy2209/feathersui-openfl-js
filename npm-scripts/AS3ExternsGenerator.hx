@@ -37,10 +37,14 @@ class AS3ExternsGenerator {
 		"Void" => "void"
 	];
 	private static final METADATA_TO_REWRITE:Map<String, String> = [
-		":bindable" 		 => "Bindable",
-		":event" 			 => "Event",
-		":inspectable" 		 => "Inspectable",
-		"defaultXmlProperty" => "DefaultProperty"
+		"bindable" 		      => "Bindable",
+		"event" 			  => "Event",
+		"inspectable" 		  => "Inspectable",
+		"defaultXmlProperty"  => "DefaultProperty"
+		":bindable" 		  => "Bindable",
+		":event" 			  => "Event",
+		":inspectable" 		  => "Inspectable",
+		":defaultXmlProperty" => "DefaultProperty"
 	];
 	private static final QNAME_VECTOR = "Vector";
 
