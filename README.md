@@ -34,6 +34,7 @@ Alternatively, Feathers UI may be added to any HTML file using a few `<script>` 
 
 ### Sample code
 
+JS
 ```js
 class HelloWorld extends feathers.controls.Application {
   constructor() {
@@ -61,6 +62,35 @@ var stage = new openfl.display.Stage(0, 0, null, null, {
 });
 document.body.appendChild(stage.element);
 stage.addChild(new HelloWorld());
+```
+
+MXML  
+```mxml
+<f:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+    xmlns:f="library://ns.feathersui.com/mxml">
+
+  <fx:Script><![CDATA[
+
+    import feathers.events.TriggerEvent;
+    import feathers.controls.TextCallout;
+
+    function button_triggerHandler( event:TriggerEvent ):void {
+      TextCallout.show("Hello World", this.button);
+    }
+
+  ]]></fx:Script>
+
+  <f:layout>
+    <f:AnchorLayout />
+  </f:layout>
+
+  <f:Button id="button" text="Click Me" trigger="button_triggerHandler(event)">
+    <f:layoutData>
+      <f:AnchorLayoutData horizontalCenter="0" verticalCenter="0" />
+    </f:layoutData>
+  </f:Button>
+
+</f:Application>
 ```
 
 ## Help & Support
