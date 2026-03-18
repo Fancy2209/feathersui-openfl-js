@@ -15,7 +15,7 @@
   },
   "homepage": "https://feathersui.com/",
   "main": "dist/feathersui-openfl.min.js",
-  "types": "dist/types/index.d.ts",
+  "types": "dist/types/feathers/index.d.ts",
   "files": [
     "dist"
   ],
@@ -45,7 +45,7 @@
   "scripts": {
     "build": "npm run clean && npm run build-lib && npm run gen-lib && npm run build-dist && npm run build-swc",
     "clean": "del lib/_gen/ lib/feathers/ dist/",
-    "gen-lib": "cd npm-scripts && node generate-modules gen-lib && cp ../lib/index.js ../dist/types/index.d.ts && tsc",
+    "gen-lib": "cd npm-scripts && node generate-modules gen-lib && cp ../lib/feathers/index.js ../dist/types/feathers/index.d.ts && tsc",
     "build-lib": "cd npm-scripts && haxe js-lib.hxml && node generate-modules fix-npm-libs",
     "build-lib-esm": "cd npm-scripts && node generate-modules gen-esm",
     "build-swc": "compc -load-config=node_modules/@apache-royale/royale-js/royale-asjs/frameworks/js-config.xml -keep-as3-metadata=JSModule -include-sources=lib -namespace library://ns.feathersui.com/openfl/mxml npm-scripts/mxml-manifest.xml -include-namespaces library://ns.feathersui.com/openfl/mxml -compiler.targets=SWF,JS -warnings=false -external-library-path+=node_modules/openfl/dist/openfl.swc -allow-subclass-overrides=true -output=dist/feathersui-royale-typedefs.swc",
